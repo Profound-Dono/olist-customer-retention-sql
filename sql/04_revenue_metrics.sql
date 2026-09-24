@@ -11,15 +11,12 @@
 -- ============================================================
 -- 1. Total Revenue
 -- ============================================================
--- What is the total customer payment value represented
--- in the dataset?
 
 SELECT ROUND(SUM(payment_value), 2) FROM order_payments
 
 -- ============================================================
 -- 2. Revenue by Month
 -- ============================================================
--- How does revenue change over time?
 
 SELECT
     DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,
@@ -34,7 +31,6 @@ ORDER BY 1
 -- ============================================================
 -- 3. Revenue by Product Category
 -- ============================================================
--- Which product categories generate the most item revenue?
 
 SELECT
 p.product_category_name,
@@ -48,7 +44,6 @@ ORDER BY sum(oi.price) desc
 -- ============================================================
 -- 4. Revenue by Customer State
 -- ============================================================
--- Which Brazilian states generate the most revenue?
 
 SELECT customer_state, sum(payment_value) AS revenue FROM orders
 INNER JOIN order_payments
@@ -60,7 +55,5 @@ GROUP BY customer_state
 -- ============================================================
 -- 5. Average Order Value
 -- ============================================================
--- What is the average value of a completed order?
 
 SELECT ROUND(AVG(payment_value), 2) FROM order_payments
-
