@@ -54,7 +54,10 @@ FROM (
 -- ============================================================
 -- What percentage of unique customers are repeat customers?
 
-...
+SELECT 
+    ROUND(COUNT(DISTINCT customer_unique_id)/COUNT(customer_unique_id)*100,2)
+FROM customers
+
 
 -- ============================================================
 -- 5. Average Orders per Customer
