@@ -11,18 +11,20 @@
 -- ============================================================
 -- 1. Orders Delivered Before or On the Estimated Date
 -- ============================================================
--- What percentage of delivered orders arrived on or before
--- the estimated delivery date?
 
-
+SELECT
+COUNT(order_id)
+FROM orders
+WHERE order_delivered_customer_date > order_estimated_delivery_date
 
 -- ============================================================
 -- 2. Late Delivery Rate
 -- ============================================================
--- What percentage of delivered orders arrived after the
--- estimated delivery date?
 
-
+SELECT
+ROUND(COUNT(order_id)/99441*100, 1) AS percentage
+FROM orders
+WHERE order_delivered_customer_date > order_estimated_delivery_date
 
 -- ============================================================
 -- 3. Average Review Score by Delivery Performance
@@ -30,6 +32,22 @@
 -- Do customers who experienced late delivery leave different
 -- review scores than customers whose orders were not late?
 
+SELECT
+COUNT(o.order_id) AS ontime_orders,
+ROUND(AVG(review_score),0) AS avg_review_score
+FROM orders o
+JOIN order_reviews r
+ON o.order_id = r.order_id
+WHERE order_delivered_customer_date < o.order_estimated_delivery_date
+
+
+SELECT
+COUNT(o.order_id) AS late_orders,
+ROUND(avg(review_score),0) AS avg_review_score
+FROM orders o
+JOIN order_reviews r
+ON o.order_id = r.order_id
+WHERE order_delivered_customer_date > o.order_estimated_delivery_date 
 
 
 -- ============================================================
