@@ -11,14 +11,12 @@
 -- ============================================================
 -- 1. Unique Customers
 -- ============================================================
--- How many unique customers are represented in the dataset?
 
 SELECT COUNT(DISTINCT customer_unique_id) FROM customers
 
 -- ============================================================
 -- 2. One-Time Customers
 -- ============================================================
--- How many customers placed exactly one order?
 
 SELECT
 COUNT(*) AS one_time_customers
@@ -35,7 +33,6 @@ FROM (
 -- ============================================================
 -- 3. Repeat Customers
 -- ============================================================
--- How many customers placed more than one order?
 
 SELECT
     COUNT(*) AS one_time_customers
@@ -52,7 +49,6 @@ FROM (
 -- ============================================================
 -- 4. Repeat Customer Rate
 -- ============================================================
--- What percentage of unique customers are repeat customers?
 
 SELECT 
     ROUND(COUNT(DISTINCT customer_unique_id)/COUNT(customer_unique_id)*100,2)
@@ -62,7 +58,6 @@ FROM customers
 -- ============================================================
 -- 5. Average Orders per Customer
 -- ============================================================
--- How many orders does the average customer place?
 
 SELECT
 round(avg(ye), 2) AS one_time_customers
