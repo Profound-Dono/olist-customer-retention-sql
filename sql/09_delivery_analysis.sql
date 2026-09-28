@@ -53,15 +53,49 @@ WHERE order_delivered_customer_date > o.order_estimated_delivery_date
 -- ============================================================
 -- 4. Repeat Customer Rate by Delivery Performance
 -- ============================================================
--- Is repeat purchasing different between customers whose
--- orders were late and those whose orders were not late?
 
+with one as(
+SELECT
+COUNT(c.customer_unique_id) cui
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+WHERE order_delivered_customer_date > order_estimated_delivery_date
+GROUP BY c.customer_unique_id
+HAVING COUNT(o.order_id) > 1
+)
+select
+sum(cui) late_repeat_customers
+from one
 
+with one as(
+SELECT
+COUNT(c.customer_unique_id) cui
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+WHERE order_delivered_customer_date < order_estimated_delivery_date
+GROUP BY c.customer_unique_id
+HAVING COUNT(o.order_id) > 1
+)
+select
+sum(cui) late_repeat_customers
+from one
 
 -- ============================================================
 -- 5. Missing Delivery Dates
 -- ============================================================
--- How many orders do not have a recorded delivery date,
--- and how should these orders be handled in delivery analysis?
 
-
+with one as(
+SELECT
+COUNT(c.customer_unique_id) cui
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+WHERE order_delivered_customer_date isnull
+GROUP BY c.customer_unique_id
+HAVING COUNT(o.order_id) > 1
+)
+select
+sum(cui) no_delivery_yet_repeat_customers
+from one
