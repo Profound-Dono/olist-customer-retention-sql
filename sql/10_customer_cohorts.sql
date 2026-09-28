@@ -113,5 +113,5 @@ purchase_month,
 COUNT(DISTINCT customer_unique_id) AS active_customers
 FROM customer_purchases
 GROUP BY cohort_month, purchase_month
-ORDER BY cohort_month, purchase_month;
+ORDER BY cohort_month, purchase_month
 
