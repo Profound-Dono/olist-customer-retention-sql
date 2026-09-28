@@ -27,31 +27,31 @@ SELECT COUNT(*) AS row_count FROM sellers;
 -- ============================================================
 
 SELECT
-    MIN(order_purchase_timestamp)::date AS first_order_date,
-    MAX(order_purchase_timestamp)::date AS last_order_date
-FROM orders;
+MIN(order_purchase_timestamp)::date AS first_order_date,
+MAX(order_purchase_timestamp)::date AS last_order_date
+FROM orders
 
 -- ============================================================
 -- 3. Order Status Distribution
 -- ============================================================
 
 SELECT
-    order_status,
-    COUNT(*) AS order_count
+order_status,
+COUNT(*) AS order_count
 FROM orders
 GROUP BY order_status
-ORDER BY order_count DESC;
+ORDER BY order_count DESC
 
 -- ============================================================
 -- 4. Payment Type Distribution
 -- ============================================================
 
 SELECT
-    payment_type,
-    COUNT(*) AS payment_count
+payment_type,
+COUNT(*) AS payment_count
 FROM order_payments
 GROUP BY payment_type
-ORDER BY payment_count DESC;
+ORDER BY payment_count DESC
 
 -- ============================================================
 -- 5. Product and Seller Coverage
@@ -92,7 +92,7 @@ SELECT
     COUNT(*) FILTER (
         WHERE order_delivered_customer_date IS NULL
     ) AS missing_delivery_date
-FROM orders;
+FROM orders
 
 -- ============================================================
 -- 7. Delivery Date Availability
@@ -105,4 +105,4 @@ SELECT
     COUNT(*) FILTER (
         WHERE order_delivered_customer_date IS NULL
     ) AS orders_without_delivery_date
-FROM orders;
+FROM orders
