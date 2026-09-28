@@ -11,70 +11,74 @@
 -- ============================================================
 -- 1. Average Orders per Customer
 -- ============================================================
--- How many orders does a typical customer make?
 
-WITH one AS(
-SELECT c.customer_unique_id, COUNT(order_id) AS yes
+WITH one AS
+(
+SELECT c.customer_unique_id,
+COUNT(order_id) AS oi
 FROM orders o
 JOIN customers c 
 ON o.customer_id = c.customer_id 
 GROUP BY c.customer_unique_id
 )
-SELECT ROUND(AVG(yes), 2) FROM one
+SELECT
+ROUND(AVG(oi), 2) customer_orders
+FROM one
 
 -- ============================================================
 -- 2. One-Time Customer Percentage
 -- ============================================================
--- What percentage of customers make only one purchase?
 
-WITH one AS(
-SELECT c.customer_unique_id, COUNT(order_id) AS yes
+WITH customer_orders AS
+(
+SELECT
+c.customer_unique_id,
+COUNT(o.order_id) AS order_count
 FROM orders o
-JOIN customers c 
-ON o.customer_id = c.customer_id 
+JOIN customers c
+ON o.customer_id = c.customer_id
 GROUP BY c.customer_unique_id
-having count(order_id) = 1
 )
-select round(sum(yes)/99441*100,1) as percentage
-from one
+SELECT
+ROUND(100.0*COUNT(*)FILTER(WHERE order_count = 1)/COUNT(*), 2) AS one_time_customer_rate
+FROM customer_orders
 
 -- ============================================================
 -- 3. Repeat Customer Percentage
 -- ============================================================
--- What percentage of customers make two or more purchases?
 
-WITH one AS(
-SELECT c.customer_unique_id, COUNT(order_id) AS yes
+WITH customer_orders AS
+(
+SELECT
+c.customer_unique_id,
+COUNT(o.order_id) AS order_count
 FROM orders o
-JOIN customers c 
-ON o.customer_id = c.customer_id 
+JOIN customers c
+ON o.customer_id = c.customer_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(order_id) > 2
 )
-SELECT ROUND(SUM(yes)/99441*100,1) AS percentage
-FROM one
+SELECT
+ROUND(100.0*COUNT(*)FILTER(WHERE order_count > 1)/COUNT(*), 2) AS repeat_customer_rate
+FROM customer_orders
 
 -- ============================================================
 -- 4. Average Time Between Purchases
 -- ============================================================
--- For repeat customers, how much time passes on average
--- between purchases?
 
-with one as(
-SELECT 
-customer_unique_id,
-max(o.order_purchase_timestamp)-(min(o.order_purchase_timestamp)) as yes
-FROM customers c
-JOIN orders o
-ON o.customer_id = c.customer_id
-group by c.customer_unique_id
-)
-select avg(yes)
-from one
+...
 
 -- ============================================================
 -- 5. Purchasing Behavior Over Time
 -- ============================================================
 -- Does customer purchasing frequency change over time?
 
-No it doesn't.
+SELECT
+DATE_TRUNC('month', o.order_purchase_timestamp)::date AS month,
+COUNT(DISTINCT c.customer_unique_id) AS purchasing_customers,
+COUNT(o.order_id) AS orders,
+ROUND(COUNT(o.order_id)::numeric/COUNT(DISTINCT c.customer_unique_id, 2) AS orders_per_customer
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+GROUP BY 1
+ORDER BY 1
