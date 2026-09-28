@@ -12,124 +12,160 @@
 -- 1. Revenue from One-Time Customers
 -- ============================================================
 
-WITH one AS(
+WITH customer_revenue AS
+(
 SELECT
 c.customer_unique_id,
-sum(op.payment_value) pv
+SUM(op.payment_value) AS revenue,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
+JOIN order_payments op
+ON o.order_id = op.order_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) = 1
 )
 SELECT
-SUM(pv) AS revenue
-FROM one
+ROUND(SUM(revenue), 2) AS one_time_customer_revenue
+FROM customer_revenue
+WHERE order_count = 1
 
 -- ============================================================
 -- 2. Revenue from Repeat Customers
 -- ============================================================
 
-WITH one AS(
+WITH customer_revenue AS
+(
 SELECT
 c.customer_unique_id,
-sum(op.payment_value) pv
+SUM(op.payment_value) AS revenue,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
+JOIN order_payments op
+ON o.order_id = op.order_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
 )
 SELECT
-SUM(pv) AS revenue
-FROM one
+ROUND(SUM(revenue), 2) AS repeat_customer_revenue
+FROM customer_revenue
+WHERE order_count > 1
 
 -- ============================================================
 -- 3. Repeat Customer Revenue Share
 -- ============================================================
 
-WITH one AS(
+WITH customer_revenue AS
+(
 SELECT
 c.customer_unique_id,
-sum(op.payment_value) pv
+SUM(op.payment_value) AS revenue,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
+JOIN order_payments op
+ON o.order_id = op.order_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
 )
 SELECT
-round(SUM(pv)/16008872.12*100,1) AS percentage
-FROM one
+ROUND(100.0*SUM(revenue)/SUM(SUM(revenue)) OVER (), 2) AS repeat_customer_revenue_share
+FROM customer_revenue
+WHERE order_count > 1
 
 -- ============================================================
 -- 4. Average Revenue per One-Time Customer
 -- ============================================================
 
-WITH one AS(
+WITH customer_revenue AS
+(
 SELECT
 c.customer_unique_id,
-sum(op.payment_value) pv
+SUM(op.payment_value) AS revenue,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
+JOIN order_payments op
+ON o.order_id = op.order_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) = 1
 )
 SELECT
-round(avg(pv),2) AS average_revenue
-FROM one
+ROUND(AVG(revenue), 2) AS avg_revenue_per_one_time_customer
+FROM customer_revenue
+WHERE order_count = 1
 
 -- ============================================================
 -- 5. Average Revenue per Repeat Customer
 -- ============================================================
-WITH one AS(
+WITH customer_revenue AS
+(
 SELECT
 c.customer_unique_id,
-sum(op.payment_value) pv
+SUM(op.payment_value) AS revenue,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
+JOIN order_payments op
+ON o.order_id = op.order_id
 GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
 )
 SELECT
-round(avg(pv),2) AS average_revenue
-FROM one
+ROUND(AVG(revenue), 2) AS avg_revenue_per_repeat_customer
+FROM customer_revenue
+WHERE order_count > 1
 
 -- ============================================================
 -- 6. Revenue Generated After the First Purchase
 -- ============================================================
--- How much revenue is generated from orders placed after
--- a customer's first purchase?
+
+WITH customer_orders AS
+(
+SELECT
+c.customer_unique_id,
+o.order_id,
+o.order_purchase_timestamp,
+MIN(o.order_purchase_timestamp) OVER (PARTITION BY c.customer_unique_id) AS first_purchase
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+)
+SELECT
+ROUND(SUM(op.payment_value), 2) AS revenue_after_first_purchase
+FROM customer_orders co
+JOIN order_payments op
+ON co.order_id = op.order_id
+WHERE co.order_purchase_timestamp > co.first_purchase
 
 
 -- ============================================================
 -- 7. Repeat-Customer Revenue by Category
 -- ============================================================
 
+WITH customer_order_counts AS
+(
 SELECT
-p.product_category_name,
-sum(op.payment_value) pv
+c.customer_unique_id,
+COUNT(DISTINCT o.order_id) AS order_count
 FROM orders o
 JOIN customers c
 ON o.customer_id = c.customer_id
-JOIN order_payments op 
-ON o.order_id = op.order_id 
-join order_items oi
-on o.order_id = oi.order_id 
-join products p
-on oi.product_id = p.product_id 
+GROUP BY c.customer_unique_id
+)
+SELECT
+p.product_category_name,
+ROUND(SUM(oi.price), 2) AS repeat_customer_item_revenue
+FROM order_items oi
+JOIN products p
+ON oi.product_id = p.product_id
+JOIN orders o
+ON oi.order_id = o.order_id
+JOIN customers c
+ON o.customer_id = c.customer_id
+JOIN customer_order_counts coc
+ON c.customer_unique_id = coc.customer_unique_id
+WHERE coc.order_count > 1
 GROUP BY p.product_category_name
-HAVING COUNT(o.order_id) > 1
-order by sum(op.payment_value) desc
+ORDER BY repeat_customer_item_revenue DESC
