@@ -65,7 +65,20 @@ FROM customer_orders
 -- 4. Average Time Between Purchases
 -- ============================================================
 
-...
+WITH customer_purchases AS
+(
+SELECT
+c.customer_unique_id,
+o.order_purchase_timestamp,
+LAG(o.order_purchase_timestamp) OVER (PARTITION BY c.customer_unique_id ORDER BY o.order_purchase_timestamp) AS previous_purchase
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+)
+SELECT
+ROUND(AVG(order_purchase_timestamp - previous_purchase)/INTERVAL '1 day', 2) AS avg_days_between_purchases
+FROM customer_purchases
+WHERE previous_purchase IS NOT NULL
 
 -- ============================================================
 -- 5. Purchasing Behavior Over Time
