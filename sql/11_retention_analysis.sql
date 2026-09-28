@@ -187,4 +187,4 @@ ON ca.cohort_month = cs.cohort_month
 GROUP BY ca.cohort_month, cs.cohort_size
 ORDER BY ca.cohort_month
 
--- and M4 retention percentages.
+
