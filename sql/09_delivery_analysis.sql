@@ -57,7 +57,43 @@ AND o.order_delivered_customer_date > o.order_estimated_delivery_date;
 -- 4. Repeat Customer Rate by Delivery Performance
 -- ============================================================
 
-...
+WITH customer_delivery AS
+(
+SELECT
+c.customer_unique_id,
+MAX(CASE WHEN o.order_delivered_customer_date > o.order_estimated_delivery_date
+THEN 1 ELSE 0 END) AS had_late_delivery
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+WHERE o.order_delivered_customer_date IS NOT NULL
+GROUP BY c.customer_unique_id
+),
+customer_orders AS
+(
+SELECT
+c.customer_unique_id,
+COUNT(o.order_id) AS order_count
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+GROUP BY c.customer_unique_id
+)
+SELECT
+CASE WHEN cd.had_late_delivery = 1
+THEN 'Experienced Late Delivery'
+ELSE 'No Late Delivery'
+END AS delivery_group,
+COUNT(*) AS customers,
+COUNT(*) FILTER (
+WHERE co.order_count > 1
+) AS repeat_customers,
+ROUND(100.0*COUNT(*) FILTER (WHERE co.order_count > 1)/COUNT(*), 2) AS repeat_customer_rate
+FROM customer_delivery cd
+JOIN customer_orders co
+ON cd.customer_unique_id = co.customer_unique_id
+GROUP BY cd.had_late_delivery
+ORDER BY cd.had_late_delivery DESC
 
 -- ============================================================
 -- 5. Missing Delivery Dates
