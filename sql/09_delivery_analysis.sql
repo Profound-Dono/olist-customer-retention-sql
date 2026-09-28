@@ -13,89 +13,57 @@
 -- ============================================================
 
 SELECT
-COUNT(order_id)
+COUNT(*) AS on_time_orders
 FROM orders
-WHERE order_delivered_customer_date > order_estimated_delivery_date
+WHERE order_delivered_customer_date IS NOT NULL
+AND order_delivered_customer_date <= order_estimated_delivery_date
 
 -- ============================================================
 -- 2. Late Delivery Rate
 -- ============================================================
 
 SELECT
-ROUND(COUNT(order_id)/99441*100, 1) AS percentage
+ROUND(100.0*COUNT(*)/(SELECT COUNT(*) FROM orders WHERE order_delivered_customer_date IS NOT NULL), 2) AS late_delivery_rate
 FROM orders
-WHERE order_delivered_customer_date > order_estimated_delivery_date
+WHERE order_delivered_customer_date IS NOT NULL
+AND order_delivered_customer_date > order_estimated_delivery_date
 
 -- ============================================================
 -- 3. Average Review Score by Delivery Performance
 -- ============================================================
--- Do customers who experienced late delivery leave different
--- review scores than customers whose orders were not late?
 
 SELECT
-COUNT(o.order_id) AS ontime_orders,
-ROUND(AVG(review_score),0) AS avg_review_score
+'On Time' AS delivery_performance,
+COUNT(o.order_id) AS orders,
+ROUND(AVG(r.review_score), 2) AS avg_review_score
 FROM orders o
 JOIN order_reviews r
 ON o.order_id = r.order_id
-WHERE order_delivered_customer_date < o.order_estimated_delivery_date
-
-
+WHERE o.order_delivered_customer_date IS NOT NULL
+AND o.order_delivered_customer_date <= o.order_estimated_delivery_date
+UNION ALL
 SELECT
-COUNT(o.order_id) AS late_orders,
-ROUND(avg(review_score),0) AS avg_review_score
+'Late' AS delivery_performance,
+COUNT(o.order_id) AS orders,
+ROUND(AVG(r.review_score), 2) AS avg_review_score
 FROM orders o
 JOIN order_reviews r
 ON o.order_id = r.order_id
-WHERE order_delivered_customer_date > o.order_estimated_delivery_date 
+WHERE o.order_delivered_customer_date IS NOT NULL
+AND o.order_delivered_customer_date > o.order_estimated_delivery_date;
 
 
 -- ============================================================
 -- 4. Repeat Customer Rate by Delivery Performance
 -- ============================================================
 
-with one as(
-SELECT
-COUNT(c.customer_unique_id) cui
-FROM orders o
-JOIN customers c
-ON o.customer_id = c.customer_id
-WHERE order_delivered_customer_date > order_estimated_delivery_date
-GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
-)
-select
-sum(cui) late_repeat_customers
-from one
-
-with one as(
-SELECT
-COUNT(c.customer_unique_id) cui
-FROM orders o
-JOIN customers c
-ON o.customer_id = c.customer_id
-WHERE order_delivered_customer_date < order_estimated_delivery_date
-GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
-)
-select
-sum(cui) late_repeat_customers
-from one
+...
 
 -- ============================================================
 -- 5. Missing Delivery Dates
 -- ============================================================
 
-with one as(
 SELECT
-COUNT(c.customer_unique_id) cui
-FROM orders o
-JOIN customers c
-ON o.customer_id = c.customer_id
-WHERE order_delivered_customer_date isnull
-GROUP BY c.customer_unique_id
-HAVING COUNT(o.order_id) > 1
-)
-select
-sum(cui) no_delivery_yet_repeat_customers
-from one
+COUNT(*) AS orders_without_delivery_date
+FROM orders
+WHERE order_delivered_customer_date IS NULL
