@@ -30,21 +30,36 @@ ORDER BY COUNT(c.customer_unique_id) desc
 -- ============================================================
 -- 2. Repeat Customer Rate by Category
 -- ============================================================
--- Which categories have the highest repeat customer rates?
 
-
+SELECT
+p.product_category_name,
+COUNT(distinct c.customer_unique_id)
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+join order_items oi
+on o.order_id = oi.order_id 
+join products p 
+on oi.product_id = p.product_id 
+GROUP BY p.product_category_name
+HAVING COUNT(o.order_id) > 1
+order by COUNT(distinct c.customer_unique_id) desc limit 3
 
 -- ============================================================
 -- 3. Lowest Repeat Customer Rates by Category
 -- ============================================================
--- Which categories have the lowest repeat customer rates?
 
-
-
--- ============================================================
--- 4. Repeat-Customer Revenue by Category
--- ============================================================
--- Which product categories generate the most revenue from
--- customers classified as repeat customers?
-
+SELECT
+p.product_category_name,
+COUNT(distinct c.customer_unique_id)
+FROM orders o
+JOIN customers c
+ON o.customer_id = c.customer_id
+join order_items oi
+on o.order_id = oi.order_id 
+join products p 
+on oi.product_id = p.product_id 
+GROUP BY p.product_category_name
+HAVING COUNT(o.order_id) > 1
+order by COUNT(distinct c.customer_unique_id) asc limit 3
 
